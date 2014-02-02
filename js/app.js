@@ -71,10 +71,13 @@ var renderer = new THREE.WebGLRenderer({
 scene.add(camera);
 scene.fog = new THREE.FogExp2(0x000000, 0.0009);
 
-camera.position.z = 300; // camera starts at (0,0,0)
-
+camera.position.z = 150; // camera starts at (0,0,0)
+camera.position.y = 70;
 renderer.setSize(WIDTH, HEIGHT);
+
 document.body.appendChild(renderer.domElement);
+
+controls = new THREE.OrbitControls( camera );
 
 var sprite = THREE.ImageUtils.loadTexture("image/particle2.png")
 particleCount = 100,
@@ -105,6 +108,8 @@ var particleSystem = new THREE.ParticleSystem(particles, material);
 particleSystem.dynamic = true;
 
 scene.add(particleSystem);
+
+
 
 function render() {
     requestAnimationFrame(render);
