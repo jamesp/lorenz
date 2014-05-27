@@ -1,5 +1,5 @@
 var WIDTH = window.innerWidth * 0.8,
-    HEIGHT = window.innerHeight * 0.99,
+    HEIGHT = window.innerHeight * 0.4,
     maxVertices = 50000;
 
 
@@ -147,16 +147,235 @@ var peturb = [
 ];
 
 var x = x0,
+    x_1 = x0,
     p = peturb,
+    p_norm = peturb,
     h = 0.01;
 
 function run() {
     var jac = std_jac(x);
+    x_1 = x;
     x = vectorRK4(x, h, std_lorenz);
-    p = p.map(function(v) { return vectorRK4(v, h, jac); });
-    p = gram_schmidt(p);
-    update_vectors(p);
+    u = p.map(function(v) { return vectorRK4(v, h, jac); });
+    p = gram_schmidt(u);
+    p_norm = gram_schmidt(u, true);
+    render();
+    renderVectorVis(p_norm);
+
 }
 
 
 update_vectors(peturb);
+
+
+// === 3D Visualisation ===
+function toThreeVec(v) {
+    return new THREE.Vector3(v.x, v.y, v.z);
+}
+var material = new THREE.LineBasicMaterial({
+    color: 0x000000
+});
+
+
+// visualise the perturbation vectors
+
+var vectorScene = new THREE.Scene(),
+    vectorRenderer = new THREE.CanvasRenderer();
+
+vectorRenderer.setSize(200, 200);
+vectorRenderer.setClearColorHex( 0xffffff, 1);
+document.body.appendChild(vectorRenderer.domElement);
+
+var vectorCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
+vectorCamera.setLens(100);
+vectorCamera.position.set(0, 0, 10);
+vectorCamera.lookAt(new THREE.Vector3(0, 0, 0));
+
+visVectors = p_norm.map(function(v) {
+    var geo = new THREE.Geometry();
+    var line = new THREE.Line(geo, material);
+    geo.vertices.push(new THREE.Vector3(0, 0, 0));
+    geo.vertices.push(toThreeVec(v));
+    vectorScene.add(line);
+    return geo;
+});
+
+function renderVectorVis(vs) {
+    update_vectors(vs);
+    vs.forEach(function(v, i) {
+        visVectors[i].vertices[1] = toThreeVec(v);
+        visVectors[i].verticesNeedUpdate = true;
+    });
+    vectorRenderer.render(vectorScene, vectorCamera);
+}
+renderVectorVis(p);
+
+
+
+// visualise the lorenz equations
+
+var scene = new THREE.Scene(),
+    zoomLevel = 50;
+
+var renderer = new THREE.CanvasRenderer();
+renderer.setSize(WIDTH, HEIGHT);
+renderer.setClearColorHex( 0xffffff, 1 );
+
+document.body.appendChild(renderer.domElement);
+
+var camera = new THREE.PerspectiveCamera(50, WIDTH/HEIGHT, 0.1, 1000);
+camera.setLens(zoomLevel);
+camera.position.set(0, 0, 100);
+camera.lookAt(new THREE.Vector3(0, 0, 0));
+
+
+
+function render() {
+    // requestAnimationFrame(render);
+
+    var geo = new THREE.Geometry();
+    var line = new THREE.Line(geo, material);
+    geo.vertices.push(new THREE.Vector3(x_1.x, x_1.y, x_1.z));
+    geo.vertices.push(new THREE.Vector3(x.x, x.y, x.z));
+    scene.add(line);
+    // geometry.vertices[nextV].set(pos.x, pos.y, pos.z);
+    // geometry.colors[nextV-1].set("rgb(0,0,0)");
+    // geometry.verticesNeedUpdate = true;
+    // geometry.colorsNeedUpdate = true;
+    renderer.render(scene, camera);
+
+
+}
+
+
+
+
+
+
+//
+//
+//
+// var mouseX = 0, mouseY = 0,
+//     zoomLevel = 50,
+//     windowHalfX = window.innerWidth / 2,
+//     windowHalfY = window.innerHeight / 2;
+//
+//
+//
+//
+//
+// var l = function (x) {
+//     return lorenz_step(x, sigma, rho, beta);
+// };
+//
+// var points = [],
+//     pos = posInitial;
+
+// // controls = new THREE.OrbitControls( camera );
+//
+// camera.position.set(0, 0, 200);
+// camera.lookAt(new THREE.Vector3(0, 0, 0));
+// var material = new THREE.LineBasicMaterial({
+//     color: 0x000000
+// });
+//
+// var geometry = new THREE.Geometry();
+// geometry.dynamic = true;
+//
+// // var line = new THREE.Line(geometry, material);
+//
+// // for (var i = 0; i < maxVertices; i++) {
+// //     geometry.vertices.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+// //     geometry.colors.push(new THREE.Color("rgb(255,255,255)"));
+// // }
+//
+// // var nextV = 1;
+//
+// // scene.add(line);
+// renderer.render(scene, camera);
+//
+// function onWindowResize() {
+//
+//     windowHalfX = window.innerWidth / 2;
+//     windowHalfY = window.innerHeight / 2;
+//
+//     camera.aspect = window.innerWidth / window.innerHeight;
+//     camera.updateProjectionMatrix();
+//
+//     renderer.setSize( window.innerWidth, window.innerHeight );
+//
+// }
+//
+// function onMouseScroll (event) {
+//
+//     event.preventDefault();
+//
+//     var delta = event.wheelDelta;
+//     zoomLevel += delta / 100;
+//     camera.setLens(zoomLevel);
+//
+// }
+//
+// function onDocumentMouseMove(event) {
+//
+//     mouseX = event.clientX - windowHalfX;
+//     mouseY = event.clientY - windowHalfY;
+//
+// }
+//
+// function onDocumentTouchStart( event ) {
+//
+//     if ( event.touches.length > 1 ) {
+//
+//         event.preventDefault();
+//
+//         mouseX = event.touches[ 0 ].pageX - windowHalfX;
+//         mouseY = event.touches[ 0 ].pageY - windowHalfY;
+//
+//     }
+//
+// }
+//
+// function onDocumentTouchMove( event ) {
+//
+//     if ( event.touches.length == 1 ) {
+//
+//         event.preventDefault();
+//
+//         mouseX = event.touches[ 0 ].pageX - windowHalfX;
+//         mouseY = event.touches[ 0 ].pageY - windowHalfY;
+//
+//     }
+//
+// }
+//
+//
+// document.addEventListener( 'mousemove', onDocumentMouseMove, false );
+// document.addEventListener( 'touchstart', onDocumentTouchStart, false );
+// document.addEventListener( 'touchmove', onDocumentTouchMove, false );
+// window.addEventListener( 'resize', onWindowResize, false );
+// document.addEventListener( 'mousewheel', onMouseScroll, false );
+//
+// function render() {
+//     requestAnimationFrame(render);
+//
+//     camera.position.x += ( mouseX - camera.position.x ) * .1;
+//     camera.position.y += ( - mouseY + 200 - camera.position.y ) * .1;
+//     camera.lookAt( scene.position );
+//
+//     //nextV += 1;
+//     // line.rotation.x += 0.001;
+//     // line.rotation.z -= 0.001;
+//     old_pos = pos;
+//     pos = pos.rk4(0.01, l);
+//     var geo = new THREE.Geometry();
+//     var line = new THREE.Line(geo, material);
+//     geo.vertices.push(new THREE.Vector3(old_pos.x, old_pos.y, old_pos.z));
+//     geo.vertices.push(new THREE.Vector3(pos.x, pos.y, pos.z));
+//     scene.add(line);
+//     // geometry.vertices[nextV].set(pos.x, pos.y, pos.z);
+//     // geometry.colors[nextV-1].set("rgb(0,0,0)");
+//     // geometry.verticesNeedUpdate = true;
+//     // geometry.colorsNeedUpdate = true;
+//     renderer.render(scene, camera);
+// }
