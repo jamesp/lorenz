@@ -72,23 +72,6 @@ function make_lorenz(sigma, r, b) {
     }
 }
 
-
-// def extended_lorenz(xu, sigma=10.0, r=28.0, b=8.0/3.0):
-//     """Extended Lorenz system includes the linearised equations.
-//     Given a 4 vector list `xu`, where row 1 is the position in
-//     phase space and rows 2-4 are 3 perturbation vectors.
-//     Returns 4 vector list of the same format for the new position."""
-//     xyz, u = unaugment_position(xu)
-//     x,y,z = xyz
-//     xyz_ = lorenz(xyz, sigma, r, b)
-//     u_ = []
-//     for dx, dy, dz in u:
-//         dxdot = -sigma*dx + sigma*dy
-//         dydot = (r - z) * dx - dy - x * dz
-//         dzdot = y * dx + x * dy - b * dz
-//         u_.append([dxdot, dydot, dzdot])
-//     return augment_position(xyz_, u_)
-
 function make_lorenz_jacobian(sigma, r, b) {
     return function jacobian_at(pos) {
         return function jacobian(v) {
@@ -100,27 +83,6 @@ function make_lorenz_jacobian(sigma, r, b) {
     }
 }
 
-
-
-function update_vectors(data) {
-    var pTable = d3.select('#p_vectors tbody');
-    var cols = ['x','y','z'];
-
-    var rows = pTable.selectAll('tr')
-        .data(data);
-
-    rows.enter().append('tr');
-
-    var cells = rows.selectAll('td')
-        .data(function(v){
-            return cols.map(function(c) { return v[c]; });
-        });
-
-    cells.enter().append('td');
-    cells.text(function(d) { return d.toFixed(4); });
-    cells.exit().remove();
-}
-
 function vectorRK4(x, h, fn) {
     // perform a step of rk4 using the given step size and function
     var k1 = fn(x).scale(h),
@@ -129,8 +91,6 @@ function vectorRK4(x, h, fn) {
         k4 = fn(x.add(k3)).scale(h);
     return x.add((k1.add(k2.scale(2)).add(k3.scale(2)).add(k4)).scale(1 / 6));
 }
-
-
 
 var x0 = new Vector(5.2, 8.5, 27.0),
     sigma = 10,
@@ -143,29 +103,49 @@ var std_lorenz = make_lorenz(sigma, r, b),
 var peturb = [
     new Vector(1,0,0),
     new Vector(0,1,0),
-    new Vector(0,0,1)
-];
+    new Vector(0,0,1)];
 
-var x = x0,
+var t = 0,
+    x = x0,
     x_1 = x0,
     p = peturb,
     p_norm = peturb,
+    u = peturb,
+    sums = [0,0,0],
+    exponents = [0,0,0],
     h = 0.01;
 
 function run() {
+    t = t + h;
     var jac = std_jac(x);
     x_1 = x;
     x = vectorRK4(x, h, std_lorenz);
     u = p.map(function(v) { return vectorRK4(v, h, jac); });
-    p = gram_schmidt(u);
-    p_norm = gram_schmidt(u, true);
+    orthogonal = gram_schmidt(u);
+    orthonormal = gram_schmidt(u, true);
+    p = orthonormal;
     render();
-    renderVectorVis(p_norm);
-
+    vectorVis.render(u, orthogonal, orthonormal);
+    sums = sums.map(function(e, i) {
+        return e + Math.log(orthogonal[i].length);
+    });
+    exponents = sums.map(function(e) { return e / t; });
+    showExponents(exponents);
 }
 
+function showExponents(es) {
+    var div = d3.select('#exponents');
 
-update_vectors(peturb);
+    var rows = div.selectAll('p')
+        .data(es);
+
+    rows.enter().append('p');
+    rows.text(function(d) { return d.toFixed(4); });
+    rows.exit().remove();
+
+    d3.select('#exponent_sum').text(es.reduce(function(x,y) {return x+y; }));
+
+}
 
 
 // === 3D Visualisation ===
@@ -179,36 +159,72 @@ var material = new THREE.LineBasicMaterial({
 
 // visualise the perturbation vectors
 
-var vectorScene = new THREE.Scene(),
-    vectorRenderer = new THREE.CanvasRenderer();
+var vectorVis = {
+        scene: new THREE.Scene(),
+        renderer: new THREE.CanvasRenderer(),
+        camera: new THREE.PerspectiveCamera(50, 1, 0.1, 1000),
 
-vectorRenderer.setSize(200, 200);
-vectorRenderer.setClearColorHex( 0xffffff, 1);
-document.body.appendChild(vectorRenderer.domElement);
+        init: function() {
+            var vis = this;
+            this.renderer.setSize(200, 200);
+            this.renderer.setClearColorHex( 0xffffff, 1);
+            document.body.appendChild(this.renderer.domElement);
 
-var vectorCamera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
-vectorCamera.setLens(100);
-vectorCamera.position.set(0, 0, 10);
-vectorCamera.lookAt(new THREE.Vector3(0, 0, 0));
+            this.camera.setLens(100);
+            this.camera.position.set(0, 0, 10);
+            this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
-visVectors = p_norm.map(function(v) {
-    var geo = new THREE.Geometry();
-    var line = new THREE.Line(geo, material);
-    geo.vertices.push(new THREE.Vector3(0, 0, 0));
-    geo.vertices.push(toThreeVec(v));
-    vectorScene.add(line);
-    return geo;
-});
+            // store three types of vectors
+            this.vector_group_names = ['actual', 'orthogonal', 'normed'];
+            this.vector_groups = []
+            this.vector_group_names.forEach(function (s) {
+                var vectors = [1,2,3].map(function() {
+                    var geo = new THREE.Geometry();
+                    var line = new THREE.Line(geo, material);
+                    geo.vertices.push(new THREE.Vector3(0, 0, 0));
+                    geo.vertices.push(new THREE.Vector3(0, 0, 0));
+                    vis.scene.add(line);
+                    return geo;
+                });
+                vis.vector_groups.push(vectors);
+            });
 
-function renderVectorVis(vs) {
-    update_vectors(vs);
-    vs.forEach(function(v, i) {
-        visVectors[i].vertices[1] = toThreeVec(v);
-        visVectors[i].verticesNeedUpdate = true;
-    });
-    vectorRenderer.render(vectorScene, vectorCamera);
-}
-renderVectorVis(p);
+        },
+
+        update_table: function(data) {
+            var pTable = d3.select('#p_vectors tbody');
+            var cols = ['x','y','z'];
+
+            var rows = pTable.selectAll('tr')
+                .data(data);
+
+            rows.enter().append('tr');
+
+            var cells = rows.selectAll('td')
+                .data(function(v){
+                    return cols.map(function(c) { return v[c]; });
+                });
+
+            cells.enter().append('td');
+            cells.text(function(d) { return d.toFixed(4); });
+            cells.exit().remove();
+        },
+
+        render: function (actual, orthogonal, normed) {
+            var vis = this,
+            vector_groups = [actual, orthogonal, normed];
+            this.update_table(normed);
+            vector_groups.forEach(function(vg, i) {
+                vg.forEach(function(v, j) {
+                    vis.vector_groups[i][j].vertices[1] = toThreeVec(v);
+                    vis.vector_groups[i][j].verticesNeedUpdate = true;
+                });
+            });
+            this.renderer.render(this.scene, this.camera);
+        }
+};
+vectorVis.init();
+vectorVis.render(u, p, p_norm);
 
 
 
