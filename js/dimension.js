@@ -7,6 +7,7 @@ var Vector = function (x, y, z) {
     this.x = x;
     this.y = y;
     this.z = z;
+    this.length = Math.sqrt(this.abs());
 };
 
 Vector.prototype = {
@@ -23,7 +24,7 @@ Vector.prototype = {
         return this.add(v.invert());
     },
     dot: function (v) {
-        return this.x * v.x + this.y * v.y + this.z + v.z;
+        return this.x * v.x + this.y * v.y + this.z * v.z;
     },
     rk4: function (h, fn) {
         // perform a step of rk4 using the given step size and function
@@ -32,8 +33,34 @@ Vector.prototype = {
             k3 = fn(this.add(k2.scale(0.5))).scale(h),
             k4 = fn(this.add(k3)).scale(h);
         return this.add((k1.add(k2.scale(2)).add(k3.scale(2)).add(k4)).scale(1 / 6));
+    },
+    abs: function() {
+        return this.dot(this);
+    },
+    normalise: function(){
+        var len = this.length;
+        return this.scale(1/this.length);
+    },
+    project: function(v) {
+        // project this vector along v
+        return this.scale(this.dot(v) / this.abs());
     }
 };
+
+var gram_schmidt = function(vectors, normalise) {
+    var normalise = normalise || false;
+    var orthog_vectors = [];
+    vectors.forEach(function (v) {
+        var p = orthog_vectors.map(function(u) { return u.project(v); });
+        var u = v.subtract(p.reduce(function(u,v) { return u.add(v); }, new Vector(0,0,0)));
+        orthog_vectors.push(u);
+    });
+    if (normalise) {
+        return orthog_vectors.map(function(v) { return v.normalise(); });
+    } else {
+        return orthog_vectors;
+    }
+}
 
 
 var mouseX = 0, mouseY = 0,
@@ -49,7 +76,7 @@ var lorenz_step = function (pos, sigma, rho, beta) {
     return new Vector(xdot, ydot, zdot);
 };
 
-var posInitial = new Vector(10, 1, 10),
+var posInitial = new Vector(5.2, 8.5, 27.0),
     sigma = 10,
     rho = 28,
     beta = 8 / 3;
@@ -179,8 +206,3 @@ function render() {
     // geometry.colorsNeedUpdate = true;
     renderer.render(scene, camera);
 }
-
-
-
-
-render();
