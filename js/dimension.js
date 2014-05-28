@@ -198,7 +198,7 @@ var vectorVis = {
 
         update_table: function(data) {
             var pTable = d3.select('#p_vectors tbody');
-            var cols = ['x','y','z'];
+            var cols = ['x','y','z', 'length'];
 
             var rows = pTable.selectAll('tr')
                 .data(data);
@@ -233,7 +233,7 @@ vectorVis.render(u, u_1, u);
 
 // visualise the lorenz equations
 var lorenzVis = {
-    zoomLevel: 60,
+    zoomLevel: 65,
     updateDistanceThreshold: 0.4,
     vertexLimit: 1000,
     lineStyle: new THREE.LineBasicMaterial({
@@ -257,15 +257,18 @@ var lorenzVis = {
 
         this.camera = new THREE.PerspectiveCamera(50, this.width/this.height, 0.1, 1000);
         this.camera.setLens(this.zoomLevel);
-        this.camera.position.set(0, 100, -27);
-        this.camera.lookAt(new THREE.Vector3(0, 0, 27));
+        this.camera.position.set(0, 100, 0);
         this.last_pos = x0;
 
-        c.on('mousedown', function(e) {
-            e.preventDefault();
+		this.controls = new THREE.TrackballControls( this.camera );
+        this.controls.target = new THREE.Vector3(0,0,27);
+		this.controls.rotateSpeed = 1.0;
 
-        })
+		this.controls.noPan = true;
 
+	//	this.controls.staticMoving = true;
+		this.controls.dynamicDampingFactor = 0.3;
+		this.controls.keys = [ 65, 83, 68 ];
     },
 
     render: function(x) {
@@ -281,6 +284,7 @@ var lorenzVis = {
                 // remove oldest vertices
                 this.scene.children.splice(0, 1);
             };
+            this.controls.update();
             this.renderer.render(this.scene, this.camera);
         }
     },
