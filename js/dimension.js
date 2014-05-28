@@ -1,8 +1,3 @@
-var WIDTH = window.innerWidth * 0.8,
-    HEIGHT = window.innerHeight * 0.4,
-    maxVertices = 50000;
-
-
 var Vector = function (x, y, z) {
     this.x = x;
     this.y = y;
@@ -27,14 +22,6 @@ Vector.prototype = {
     dot: function (v) {
         return this.x * v.x + this.y * v.y + this.z * v.z;
     },
-    rk4: function (h, fn) {
-        // perform a step of rk4 using the given step size and function
-        var k1 = fn(this).scale(h),
-            k2 = fn(this.add(k1.scale(0.5))).scale(h),
-            k3 = fn(this.add(k2.scale(0.5))).scale(h),
-            k4 = fn(this.add(k3)).scale(h);
-        return this.add((k1.add(k2.scale(2)).add(k3.scale(2)).add(k4)).scale(1 / 6));
-    },
     abs: function() {
         return this.dot(this);
     },
@@ -46,6 +33,9 @@ Vector.prototype = {
         // project this vector along v
         return this.scale(this.dot(v) / this.abs());
     },
+    dist: function(to) { // distance to another vector
+        return this.subtract(to).length
+    }
 };
 
 function gram_schmidt (vectors, normalise) {
@@ -124,7 +114,7 @@ function run() {
     orthogonal = gram_schmidt(u);
     orthonormal = gram_schmidt(u, true);
     p = orthonormal;
-    render();
+    lorenzVis.render(x);
     vectorVis.render(u, orthogonal, orthonormal);
     sums = sums.map(function(e, i) {
         return e + Math.log(orthogonal[i].length);
@@ -136,14 +126,11 @@ function run() {
 function showExponents(es) {
     var div = d3.select('#exponents');
 
-    var rows = div.selectAll('p')
-        .data(es);
+    var rows = d3.selectAll('.exponent').data(es);
 
-    rows.enter().append('p');
     rows.text(function(d) { return d.toFixed(4); });
-    rows.exit().remove();
 
-    d3.select('#exponent_sum').text(es.reduce(function(x,y) {return x+y; }));
+    d3.select('#exponent_sum').text((es.reduce(function(x,y) {return x+y; })).toFixed(4));
 
 }
 
@@ -159,16 +146,17 @@ var material = new THREE.LineBasicMaterial({
 
 // visualise the perturbation vectors
 
+
+
 var vectorVis = {
         scene: new THREE.Scene(),
-        renderer: new THREE.CanvasRenderer(),
         camera: new THREE.PerspectiveCamera(50, 1, 0.1, 1000),
 
-        init: function() {
+        init: function(canvas) {
             var vis = this;
-            this.renderer.setSize(200, 200);
-            this.renderer.setClearColorHex( 0xffffff, 1);
-            document.body.appendChild(this.renderer.domElement);
+            var c = $(canvas);
+            this.renderer = new THREE.CanvasRenderer({canvas: c.get(0)});
+            this.renderer.setSize(c.width(), c.height());
 
             this.camera.setLens(100);
             this.camera.position.set(0, 0, 10);
@@ -188,7 +176,6 @@ var vectorVis = {
                 });
                 vis.vector_groups.push(vectors);
             });
-
         },
 
         update_table: function(data) {
@@ -223,175 +210,86 @@ var vectorVis = {
             this.renderer.render(this.scene, this.camera);
         }
 };
-vectorVis.init();
+vectorVis.init('#vector_canvas');
 vectorVis.render(u, p, p_norm);
 
-
-
 // visualise the lorenz equations
+var lorenzVis = {
+    zoomLevel: 60,
+    updateDistanceThreshold: 0.4,
+    vertexLimit: 2000,
 
-var scene = new THREE.Scene(),
-    zoomLevel = 50;
+    scene: new THREE.Scene(),
+    renderer: new THREE.CanvasRenderer(),
 
-var renderer = new THREE.CanvasRenderer();
-renderer.setSize(WIDTH, HEIGHT);
-renderer.setClearColorHex( 0xffffff, 1 );
+    init: function(canvas, x0) {
+        var vis = this;
+        var c = $(canvas);
+        this.width = c.width();
+        this.height = c.height();
+        this.renderer = new THREE.CanvasRenderer({canvas: c.get(0)});
+        this.renderer.setSize(this.width, this.height);
 
-document.body.appendChild(renderer.domElement);
+        this.camera = new THREE.PerspectiveCamera(50, this.width/this.height, 0.1, 1000);
+        this.camera.setLens(this.zoomLevel);
+        this.camera.position.set(0, 100, -27);
+        this.camera.lookAt(new THREE.Vector3(0, 0, 27));
+        this.last_pos = x0;
 
-var camera = new THREE.PerspectiveCamera(50, WIDTH/HEIGHT, 0.1, 1000);
-camera.setLens(zoomLevel);
-camera.position.set(0, 0, 100);
-camera.lookAt(new THREE.Vector3(0, 0, 0));
+        c.on('mousedown', function(e) {
+            e.preventDefault();
+
+        })
+
+    },
+
+    render: function(x) {
+        if (this.last_pos.dist(x) > this.updateDistanceThreshold) {
+            var x_1 = this.last_pos;
+            var geo = new THREE.Geometry();
+            var line = new THREE.Line(geo, material);
+            geo.vertices.push(new THREE.Vector3(x_1.x, x_1.y, x_1.z));
+            geo.vertices.push(new THREE.Vector3(x.x, x.y, x.z));
+            this.last_pos = x;
+            this.scene.add(line);
+            if (this.scene.children.length > this.vertexLimit) {
+                // remove oldest vertices
+                this.scene.children.splice(0, 1);
+            };
+            this.renderer.render(this.scene, this.camera);
+        }
+    },
+};
+lorenzVis.init('#lorenz', x0);
+lorenzVis.render(x);
 
 
+// start-stop
+var pid;
+function start(speed) {
+    var speed = speed || 1000 / 60;
+    stop(pid);
+    pid = setInterval( function () {
+        stats.begin();
+        run();
+        stats.end();
+    }, speed );
+}
 
-function render() {
-    // requestAnimationFrame(render);
-
-    var geo = new THREE.Geometry();
-    var line = new THREE.Line(geo, material);
-    geo.vertices.push(new THREE.Vector3(x_1.x, x_1.y, x_1.z));
-    geo.vertices.push(new THREE.Vector3(x.x, x.y, x.z));
-    scene.add(line);
-    // geometry.vertices[nextV].set(pos.x, pos.y, pos.z);
-    // geometry.colors[nextV-1].set("rgb(0,0,0)");
-    // geometry.verticesNeedUpdate = true;
-    // geometry.colorsNeedUpdate = true;
-    renderer.render(scene, camera);
-
-
+function stop(){
+    clearInterval(pid);
 }
 
 
 
 
+// Show FPS statistics box
+var stats = new Stats();
+stats.setMode(0); // 0: fps, 1: ms
 
+// Align top-left
+stats.domElement.style.position = 'absolute';
+stats.domElement.style.left = '800px';
+stats.domElement.style.top = '0px';
 
-//
-//
-//
-// var mouseX = 0, mouseY = 0,
-//     zoomLevel = 50,
-//     windowHalfX = window.innerWidth / 2,
-//     windowHalfY = window.innerHeight / 2;
-//
-//
-//
-//
-//
-// var l = function (x) {
-//     return lorenz_step(x, sigma, rho, beta);
-// };
-//
-// var points = [],
-//     pos = posInitial;
-
-// // controls = new THREE.OrbitControls( camera );
-//
-// camera.position.set(0, 0, 200);
-// camera.lookAt(new THREE.Vector3(0, 0, 0));
-// var material = new THREE.LineBasicMaterial({
-//     color: 0x000000
-// });
-//
-// var geometry = new THREE.Geometry();
-// geometry.dynamic = true;
-//
-// // var line = new THREE.Line(geometry, material);
-//
-// // for (var i = 0; i < maxVertices; i++) {
-// //     geometry.vertices.push(new THREE.Vector3(pos.x, pos.y, pos.z));
-// //     geometry.colors.push(new THREE.Color("rgb(255,255,255)"));
-// // }
-//
-// // var nextV = 1;
-//
-// // scene.add(line);
-// renderer.render(scene, camera);
-//
-// function onWindowResize() {
-//
-//     windowHalfX = window.innerWidth / 2;
-//     windowHalfY = window.innerHeight / 2;
-//
-//     camera.aspect = window.innerWidth / window.innerHeight;
-//     camera.updateProjectionMatrix();
-//
-//     renderer.setSize( window.innerWidth, window.innerHeight );
-//
-// }
-//
-// function onMouseScroll (event) {
-//
-//     event.preventDefault();
-//
-//     var delta = event.wheelDelta;
-//     zoomLevel += delta / 100;
-//     camera.setLens(zoomLevel);
-//
-// }
-//
-// function onDocumentMouseMove(event) {
-//
-//     mouseX = event.clientX - windowHalfX;
-//     mouseY = event.clientY - windowHalfY;
-//
-// }
-//
-// function onDocumentTouchStart( event ) {
-//
-//     if ( event.touches.length > 1 ) {
-//
-//         event.preventDefault();
-//
-//         mouseX = event.touches[ 0 ].pageX - windowHalfX;
-//         mouseY = event.touches[ 0 ].pageY - windowHalfY;
-//
-//     }
-//
-// }
-//
-// function onDocumentTouchMove( event ) {
-//
-//     if ( event.touches.length == 1 ) {
-//
-//         event.preventDefault();
-//
-//         mouseX = event.touches[ 0 ].pageX - windowHalfX;
-//         mouseY = event.touches[ 0 ].pageY - windowHalfY;
-//
-//     }
-//
-// }
-//
-//
-// document.addEventListener( 'mousemove', onDocumentMouseMove, false );
-// document.addEventListener( 'touchstart', onDocumentTouchStart, false );
-// document.addEventListener( 'touchmove', onDocumentTouchMove, false );
-// window.addEventListener( 'resize', onWindowResize, false );
-// document.addEventListener( 'mousewheel', onMouseScroll, false );
-//
-// function render() {
-//     requestAnimationFrame(render);
-//
-//     camera.position.x += ( mouseX - camera.position.x ) * .1;
-//     camera.position.y += ( - mouseY + 200 - camera.position.y ) * .1;
-//     camera.lookAt( scene.position );
-//
-//     //nextV += 1;
-//     // line.rotation.x += 0.001;
-//     // line.rotation.z -= 0.001;
-//     old_pos = pos;
-//     pos = pos.rk4(0.01, l);
-//     var geo = new THREE.Geometry();
-//     var line = new THREE.Line(geo, material);
-//     geo.vertices.push(new THREE.Vector3(old_pos.x, old_pos.y, old_pos.z));
-//     geo.vertices.push(new THREE.Vector3(pos.x, pos.y, pos.z));
-//     scene.add(line);
-//     // geometry.vertices[nextV].set(pos.x, pos.y, pos.z);
-//     // geometry.colors[nextV-1].set("rgb(0,0,0)");
-//     // geometry.verticesNeedUpdate = true;
-//     // geometry.colorsNeedUpdate = true;
-//     renderer.render(scene, camera);
-// }
+document.body.appendChild( stats.domElement );

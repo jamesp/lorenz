@@ -5,36 +5,38 @@
         <title>
             Dimension of the Lorenz Equations
         </title>
+        <script type='text/javascript' src='/js/jquery-1.11.1.js'></script>
         <script type='text/javascript' src='/js/three.js'></script>
         <script type='text/javascript' src='/js/d3.js'></script>
-        <script type='text/javascript' src='/js/OrbitControls.js'></script>
+        <script type='text/javascript' src='/js/TrackballControls.js'></script>
+        <script type='text/javascript' src='/js/stats.min.js'></script>
         <link rel="stylesheet" type="text/css" href="/css/basic.css">
     </head>
     <body>
 
         <h1>Dimension of the Lorenz Equations</h1>
-        <div>
-            <h2>Perturbation Vectors</h2>
+        <div id='peturbation_vectors'>
+            <h2>Peturbation Vectors</h2>
             <table id='p_vectors'>
                 <thead>
-                    <th>
-                        x
-                    </th>
-                    <th>
-                        y
-                    </th>
-                    <th>
-                        z
-                    </th>
+                    <th>x</th>
+                    <th>y</th>
+                    <th>z</th>
                 </thead>
                 <tbody></tbody>
             </table>
+            <canvas id="vector_canvas" width="200" height="200"></canvas>
+        </div>
+        <div id='lyapunov_exponents'>
             <h2>Lyapunov Exponents</h2>
             <div id='exponents'>
+                λ<sub>1</sub> = <span class='exponent'></span><br>
+                λ<sub>2</sub> = <span class='exponent'></span><br>
+                λ<sub>3</sub> = <span class='exponent'></span><br>
             </div>
             <p id='exponent_sum'></p>
         </div>
-
+        <canvas id="lorenz" width="400" height="600"></canvas>
         <script type='text/javascript' src='/js/dimension.js'>
 </script>
     </body>
