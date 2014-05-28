@@ -260,7 +260,7 @@ var lorenzVis = {
         this.camera.position.set(0, 100, 0);
         this.last_pos = x0;
 
-		this.controls = new THREE.TrackballControls( this.camera );
+		this.controls = new THREE.TrackballControls(this.camera, c.get(0));
         this.controls.target = new THREE.Vector3(0,0,27);
 		this.controls.rotateSpeed = 1.0;
 
