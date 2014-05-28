@@ -235,7 +235,7 @@ vectorVis.render(u, u_1, u);
 var lorenzVis = {
     zoomLevel: 65,
     updateDistanceThreshold: 0.4,
-    vertexLimit: 1000,
+    vertexLimit: 2000,
     lineStyle: new THREE.LineBasicMaterial({
         color: 0xAEAEAE,
         linewidth: 2,
@@ -332,4 +332,4 @@ stats.domElement.style.position = 'absolute';
 stats.domElement.style.left = '800px';
 stats.domElement.style.top = '0px';
 
-document.body.appendChild( stats.domElement );
+document.body.appendChild(stats.domElement);
