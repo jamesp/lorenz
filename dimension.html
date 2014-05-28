@@ -15,6 +15,12 @@
     <body>
 
         <h1>Dimension of the Lorenz Equations</h1>
+        <div id='controls'>
+            <button name="start" id='start_button'>Start</button>
+            <button name="start" id='stop_button'>Stop</button>
+            <button name="start" id='step_button'>Step</button>
+        </div>
+
         <div id='peturbation_vectors'>
             <h2>Peturbation Vectors</h2>
             <table id='p_vectors'>
@@ -26,6 +32,9 @@
                 <tbody></tbody>
             </table>
             <canvas id="vector_canvas" width="200" height="200"></canvas>
+            <label for="previous">Previous</label><input type="checkbox" name="previous" value="previous" class='vector_toggle' checked>
+            <label for="previous">Current</label><input type="checkbox" name="current" value="current" class='vector_toggle' checked>
+            <label for="previous">Orthogonal</label><input type="checkbox" name="orthogonal" value="orthogonal" class='vector_toggle' checked>
         </div>
         <div id='lyapunov_exponents'>
             <h2>Lyapunov Exponents</h2>

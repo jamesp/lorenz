@@ -82,25 +82,26 @@ function vectorRK4(x, h, fn) {
     return x.add((k1.add(k2.scale(2)).add(k3.scale(2)).add(k4)).scale(1 / 6));
 }
 
-var x0 = new Vector(5.2, 8.5, 27.0),
-    sigma = 10,
+
+
+var sigma = 10,
     r = 28,
     b = 8 / 3;
 
 var std_lorenz = make_lorenz(sigma, r, b),
     std_jac = make_lorenz_jacobian(sigma, r, b);
 
-var peturb = [
-    new Vector(1,0,0),
-    new Vector(0,1,0),
-    new Vector(0,0,1)];
+// Initial conditions
+var x0 = new Vector(5.2, 8.5, 27.0),
+    u0 = [new Vector(1,0,0),
+          new Vector(0,1,0),
+          new Vector(0,0,1)];
 
 var t = 0,
     x = x0,
     x_1 = x0,
-    p = peturb,
-    p_norm = peturb,
-    u = peturb,
+    u = u0,
+    u_1 = u0,
     sums = [0,0,0],
     exponents = [0,0,0],
     h = 0.01;
@@ -109,13 +110,18 @@ function run() {
     t = t + h;
     var jac = std_jac(x);
     x_1 = x;
+    u_1 = u.slice(0);
+
+    // iterate the trajectory forward and calculate peturbations
     x = vectorRK4(x, h, std_lorenz);
-    u = p.map(function(v) { return vectorRK4(v, h, jac); });
+    u = u.map(function(v) { return vectorRK4(v, h, jac); });
+
     orthogonal = gram_schmidt(u);
     orthonormal = gram_schmidt(u, true);
-    p = orthonormal;
+    u = orthonormal;
+
     lorenzVis.render(x);
-    vectorVis.render(u, orthogonal, orthonormal);
+    vectorVis.render(u_1, u, orthogonal);
     sums = sums.map(function(e, i) {
         return e + Math.log(orthogonal[i].length);
     });
@@ -151,6 +157,18 @@ var material = new THREE.LineBasicMaterial({
 var vectorVis = {
         scene: new THREE.Scene(),
         camera: new THREE.PerspectiveCamera(50, 1, 0.1, 1000),
+        styles: {
+            'previous': new THREE.LineBasicMaterial({
+                color: 0xE64C66,
+                linewidth: 3,
+            }),
+            'current': new THREE.LineBasicMaterial({
+                color: 0x2D3E50,
+            }),
+            'orthogonal': new THREE.LineBasicMaterial({
+                color: 0x1BBC9B,
+            }),
+        },
 
         init: function(canvas) {
             var vis = this;
@@ -163,12 +181,12 @@ var vectorVis = {
             this.camera.lookAt(new THREE.Vector3(0, 0, 0));
 
             // store three types of vectors
-            this.vector_group_names = ['actual', 'orthogonal', 'normed'];
+            this.vector_group_names = ['previous', 'current', 'orthogonal'];
             this.vector_groups = []
             this.vector_group_names.forEach(function (s) {
                 var vectors = [1,2,3].map(function() {
                     var geo = new THREE.Geometry();
-                    var line = new THREE.Line(geo, material);
+                    var line = new THREE.Line(geo, vis.styles[s]);
                     geo.vertices.push(new THREE.Vector3(0, 0, 0));
                     geo.vertices.push(new THREE.Vector3(0, 0, 0));
                     vis.scene.add(line);
@@ -197,9 +215,9 @@ var vectorVis = {
             cells.exit().remove();
         },
 
-        render: function (actual, orthogonal, normed) {
+        render: function (previous, current, normed) {
             var vis = this,
-            vector_groups = [actual, orthogonal, normed];
+            vector_groups = [previous, current, normed];
             this.update_table(normed);
             vector_groups.forEach(function(vg, i) {
                 vg.forEach(function(v, j) {
@@ -211,13 +229,20 @@ var vectorVis = {
         }
 };
 vectorVis.init('#vector_canvas');
-vectorVis.render(u, p, p_norm);
+vectorVis.render(u, u_1, u);
 
 // visualise the lorenz equations
 var lorenzVis = {
     zoomLevel: 60,
     updateDistanceThreshold: 0.4,
-    vertexLimit: 2000,
+    vertexLimit: 1000,
+    lineStyle: new THREE.LineBasicMaterial({
+        color: 0xAEAEAE,
+        linewidth: 2,
+        opacity: 0.7,
+        linejoin: "bevel",
+        linecap: "butt",
+    }),
 
     scene: new THREE.Scene(),
     renderer: new THREE.CanvasRenderer(),
@@ -247,7 +272,7 @@ var lorenzVis = {
         if (this.last_pos.dist(x) > this.updateDistanceThreshold) {
             var x_1 = this.last_pos;
             var geo = new THREE.Geometry();
-            var line = new THREE.Line(geo, material);
+            var line = new THREE.Line(geo, this.lineStyle);
             geo.vertices.push(new THREE.Vector3(x_1.x, x_1.y, x_1.z));
             geo.vertices.push(new THREE.Vector3(x.x, x.y, x.z));
             this.last_pos = x;
@@ -273,7 +298,7 @@ function start(speed) {
         stats.begin();
         run();
         stats.end();
-    }, speed );
+    }, speed);
 }
 
 function stop(){
@@ -281,6 +306,17 @@ function stop(){
 }
 
 
+// Bind to controls
+$('#start_button').click(function(){start();})
+$('#stop_button').click(stop)
+$('#step_button').click(run)
+$('.vector_toggle').change(function(e){
+    if (this.checked) {
+        vectorVis.styles[this.name].opacity = 1;
+    } else {
+        vectorVis.styles[this.name].opacity = 0;
+    }
+})
 
 
 // Show FPS statistics box
