@@ -3,18 +3,46 @@
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8">
         <title>
-            Dimension of the Lorenz Equations
+            Fractal Dimensions
         </title>
         <script type='text/javascript' src='/js/jquery-1.11.1.js'></script>
         <script type='text/javascript' src='/js/three.js'></script>
         <script type='text/javascript' src='/js/d3.js'></script>
         <script type='text/javascript' src='/js/TrackballControls.js'></script>
         <script type='text/javascript' src='/js/stats.min.js'></script>
+
+        <script type="text/x-mathjax-config">
+        MathJax.Hub.Config({
+          TeX: { equationNumbers: { autoNumber: "AMS" }},
+          styles: {
+              ".MathJax_Display": {
+                "text-align": "center",
+                margin:       "1em 0em",
+              },
+              ".MathJax .merror": {
+                "background-color": "#FFFF88",
+                color:   "#CC0000",
+                border:  "1px solid #CC0000",
+                padding: "1px 3px",
+                "font-style": "normal",
+                "font-size":  "90%"
+              }
+          }
+        });
+        </script>
+        <script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
         <link rel="stylesheet" type="text/css" href="/css/basic.css">
     </head>
     <body>
+        <h1>Calculating the Fractal Dimension of the Lorenz Attractor</h1>
+        <div class='para'>
+            The Kaplan Yorke conjecture:
+            \begin{equation}
+                D_{KY} = k + \sum^k_{i=1} \frac{\hat \lambda_i}{|\hat \lambda _{k+1}|}
+            \end{equation}
 
-        <h1>Dimension of the Lorenz Equations</h1>
+        </div>
         <div id='controls'>
             <button name="start" id='start_button'>Start</button>
             <button name="start" id='stop_button'>Stop</button>
@@ -47,7 +75,7 @@
             <p id='exponent_sum'></p>
         </div>
         <canvas id="lorenz" width="800" height="600"></canvas>
-        <script type='text/javascript' src='/js/dimension.js'>
-</script>
+        <script type='text/javascript' src='/js/vector.js'></script>
+        <script type='text/javascript' src='/js/dimension.js'></script>
     </body>
 </html>

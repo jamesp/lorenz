@@ -1,3 +1,13 @@
+body {
+    font-family: "Avenir";
+}
+
+h1 {
+    font-weight: lighter;
+    
+    font-size: 4.5em;
+}
+
 #lorenz {
     height: 600px;
     width: 600px;
