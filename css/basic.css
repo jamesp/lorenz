@@ -4,7 +4,7 @@ body {
 
 h1 {
     font-weight: lighter;
-    
+
     font-size: 4.5em;
 }
 
@@ -12,6 +12,10 @@ div#exponents p {
     float: left;
     padding: 10px 20px 10px 10px;
     width: 100px;
+}
+
+#vector_canvas {
+border: 2px solid rgba(126, 126, 126, 1);
 }
 
 #lorenz {

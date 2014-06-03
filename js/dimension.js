@@ -55,10 +55,11 @@ function run() {
 
     orthogonal = gram_schmidt(u);
     orthonormal = gram_schmidt(u, true);
+    vectorVis.render({'previous': u_1, 'current': u, 'orthogonal': orthogonal});
     u = orthonormal;
 
     lorenzVis.render(x);
-    vectorVis.render(u_1, u, orthogonal);
+
     sums = sums.map(function(e, i) {
         return e + Math.log(orthogonal[i].length);
     });
@@ -98,12 +99,16 @@ var vectorVis = {
             'previous': new THREE.LineBasicMaterial({
                 color: 0xE64C66,
                 linewidth: 3,
+                opacity: 0.5
             }),
             'current': new THREE.LineBasicMaterial({
-                color: 0x2D3E50,
+                color: 0xE64C66,
+                linewidth: 3,
             }),
             'orthogonal': new THREE.LineBasicMaterial({
                 color: 0x1BBC9B,
+                linewidth: 3,
+                visible: false
             }),
         },
 
@@ -148,16 +153,16 @@ var vectorVis = {
                 });
 
             cells.enter().append('td');
-            cells.text(function(d) { return d.toFixed(4); });
+            cells.text(function(d) { return d.toFixed(2); });
             cells.exit().remove();
         },
 
-        render: function (previous, current, normed) {
-            var vis = this,
-            vector_groups = [previous, current, normed];
-            this.update_table(normed);
-            vector_groups.forEach(function(vg, i) {
-                vg.forEach(function(v, j) {
+        render: function (data) {
+            var vis = this;
+            if (data) this.data = data;
+            this.update_table(this.data.orthogonal);
+            this.vector_group_names.forEach(function(vg, i) {
+                vis.data[vg].forEach(function(v, j) {
                     vis.vector_groups[i][j].vertices[1] = toThreeVec(v);
                     vis.vector_groups[i][j].verticesNeedUpdate = true;
                 });
@@ -166,7 +171,7 @@ var vectorVis = {
         }
 };
 vectorVis.init('#vector_canvas');
-vectorVis.render(u, u_1, u);
+vectorVis.render({'previous': u_1, 'current': u, 'orthogonal': u});
 
 // visualise the lorenz equations
 var lorenzVis = {
@@ -257,11 +262,8 @@ $('#stop_button').click(stop)
 $('#step_button').click(run)
 
 $('.vector_toggle').change(function(e){
-    if (this.checked) {
-        vectorVis.styles[this.name].opacity = 1;
-    } else {
-        vectorVis.styles[this.name].opacity = 0;
-    }
+    vectorVis.styles[this.name].visible = this.checked;
+    vectorVis.render();
 });
 $('#show_vis').change(function(e){
     lorenzVis.shouldRender = this.checked;
