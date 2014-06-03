@@ -8,6 +8,12 @@ h1 {
     font-size: 4.5em;
 }
 
+div#exponents p {
+    float: left;
+    padding: 10px 20px 10px 10px;
+    width: 100px;
+}
+
 #lorenz {
     height: 600px;
     width: 600px;

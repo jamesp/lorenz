@@ -170,9 +170,10 @@ vectorVis.render(u, u_1, u);
 
 // visualise the lorenz equations
 var lorenzVis = {
+    shouldRender: true,
     zoomLevel: 65,
     updateDistanceThreshold: 0.4,
-    vertexLimit: 2000,
+    vertexLimit: 1000,
     lineStyle: new THREE.LineBasicMaterial({
         color: 0xAEAEAE,
         linewidth: 2,
@@ -221,8 +222,10 @@ var lorenzVis = {
                 // remove oldest vertices
                 this.scene.children.splice(0, 1);
             };
-            this.controls.update();
-            this.renderer.render(this.scene, this.camera);
+            if (this.shouldRender) {
+                this.controls.update();
+                this.renderer.render(this.scene, this.camera);
+            };
         }
     },
 };
@@ -247,17 +250,23 @@ function stop(){
 }
 
 
+
 // Bind to controls
 $('#start_button').click(function(){start();})
 $('#stop_button').click(stop)
 $('#step_button').click(run)
+
 $('.vector_toggle').change(function(e){
     if (this.checked) {
         vectorVis.styles[this.name].opacity = 1;
     } else {
         vectorVis.styles[this.name].opacity = 0;
     }
-})
+});
+$('#show_vis').change(function(e){
+    lorenzVis.shouldRender = this.checked;
+    $('#lorenz').toggle(this.checked);
+});
 
 
 // Show FPS statistics box

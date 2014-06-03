@@ -30,8 +30,8 @@
           }
         });
         </script>
-        <script type="text/javascript"
-   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <!--<script type="text/javascript"
+   src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
         <link rel="stylesheet" type="text/css" href="/css/basic.css">
     </head>
     <body>
@@ -68,13 +68,23 @@
         <div id='lyapunov_exponents'>
             <h2>Lyapunov Exponents</h2>
             <div id='exponents'>
-                λ<sub>1</sub> = <span class='exponent'></span><br>
-                λ<sub>2</sub> = <span class='exponent'></span><br>
-                λ<sub>3</sub> = <span class='exponent'></span><br>
+                <p>
+                    λ<sub>1</sub>: <span class='exponent'>0</span>
+                </p>
+                <p>
+                    λ<sub>2</sub>: <span class='exponent'>0</span>
+                </p>
+                <p>
+                    λ<sub>3</sub>: <span class='exponent'>0</span>
+                </p>
+                <p>Total: <span id='exponent_sum'></span></p>
             </div>
-            <p id='exponent_sum'></p>
+
         </div>
-        <canvas id="lorenz" width="800" height="600"></canvas>
+        <div id="lorenz_vis">
+            <label for="show_vis">Show Visualisation</label><input type="checkbox" name="show_vis" value="show_vis" id='show_vis' checked>
+            <canvas id="lorenz" width="800" height="600"></canvas>
+        </div>
         <script type='text/javascript' src='/js/vector.js'></script>
         <script type='text/javascript' src='/js/dimension.js'></script>
     </body>
