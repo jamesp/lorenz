@@ -65,17 +65,30 @@ function run() {
     });
     exponents = sums.map(function(e) { return e / t; });
     showExponents(exponents);
+    updateOverview(t, t/h);
 }
 
 function showExponents(es) {
-    var div = d3.select('#exponents');
+    d3.select('#exp_sum').text((es.reduce(function(x,y) {return x+y; })).toFixed(3));
 
-    var rows = d3.selectAll('.exponent').data(es);
+    var td = d3.select('#exponent_table').selectAll('.exp').data(es);
+    td.text(function(d) { return d.toFixed(2); });
 
-    rows.text(function(d) { return d.toFixed(4); });
+    // calc kaplan yorke dim
+    var cum_sum = [];
+    es.reduce(function(a,b,i) { return cum_sum[i] = a+b; }, 0);
+    var pos_sum = cum_sum.filter(function(x){return x > 0}),
+        ky_dim = 0;
+    if (pos_sum.length) {
+        var k = pos_sum.length;
+        ky_dim = k + (pos_sum[k-1] / Math.abs(es[k]));
+    }
+    $('#ky_dimension').text(ky_dim.toFixed(4));
+}
 
-    d3.select('#exponent_sum').text((es.reduce(function(x,y) {return x+y; })).toFixed(4));
-
+function updateOverview(t, n) {
+    $("#iteration").text(n.toFixed(0));
+    $('#time').text(t.toFixed(2));
 }
 
 
@@ -178,7 +191,7 @@ var lorenzVis = {
     shouldRender: true,
     zoomLevel: 65,
     updateDistanceThreshold: 0.4,
-    vertexLimit: 1000,
+    vertexLimit: 1500,
     lineStyle: new THREE.LineBasicMaterial({
         color: 0xAEAEAE,
         linewidth: 2,
@@ -257,9 +270,21 @@ function stop(){
 
 
 // Bind to controls
-$('#start_button').click(function(){start();})
-$('#stop_button').click(stop)
-$('#step_button').click(run)
+$('#start_button').click(function(e){
+    e.preventDefault();
+    if (this.textContent == 'Start') {
+        start();
+        this.textContent = 'Stop';
+    } else {
+        stop();
+        this.textContent = 'Start';
+    }
+});
+
+$('#step_button').click(function(e){
+    e.preventDefault();
+    run();
+});
 
 $('.vector_toggle').change(function(e){
     vectorVis.styles[this.name].visible = this.checked;

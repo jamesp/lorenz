@@ -3,104 +3,83 @@
     <head>
         <meta http-equiv="content-type" content="text/html; charset=utf-8">
         <title>
-            Fractal Dimensions
+            Fractal Dimension
         </title>
         <script type='text/javascript' src='/js/jquery-1.11.1.js'></script>
         <script type='text/javascript' src='/js/three.js'></script>
         <script type='text/javascript' src='/js/d3.js'></script>
         <script type='text/javascript' src='/js/TrackballControls.js'></script>
         <script type='text/javascript' src='/js/stats.min.js'></script>
-
-        <script type="text/x-mathjax-config">
-        MathJax.Hub.Config({
-          TeX: { equationNumbers: { autoNumber: "AMS" }},
-          styles: {
-              ".MathJax_Display": {
-                "text-align": "center",
-                margin:       "1em 0em",
-              },
-              ".MathJax .merror": {
-                "background-color": "#FFFF88",
-                color:   "#CC0000",
-                border:  "1px solid #CC0000",
-                padding: "1px 3px",
-                "font-style": "normal",
-                "font-size":  "90%"
-              }
-          }
-        });
-        </script>
         <!--<script type="text/javascript"
    src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script> -->
         <link rel="stylesheet" type="text/css" href="/css/basic.css">
     </head>
     <body>
         <h1>Calculating the Fractal Dimension of the Lorenz Attractor</h1>
-        <div class='para'>
-            The Kaplan Yorke conjecture:
-            \begin{equation}
-                D_{KY} = k + \sum^k_{i=1} \frac{\hat \lambda_i}{|\hat \lambda _{k+1}|}
-            \end{equation}
+        <div>
 
-        </div>
-        <div id='controls'>
-            <button name="start" id='start_button'>Start</button>
-            <button name="start" id='stop_button'>Stop</button>
-            <button name="start" id='step_button'>Step</button>
-        </div>
+            <div id='controls'>
+                <a href='#' id='start_button' class='jpbutton'>Start</a>
+                <a href='#' id='step_button' class='jpbutton'>Step</a>
+                <input type="checkbox" name="show_vis" value="show_vis" id='show_vis' checked><label for="show_vis">Show Visualisation</label>
+                <div id="overview">
+                    <p>Time: <span id='time'>0</span>
 
-        <div id='peturbation_vectors'>
-            <h2>Peturbation Vectors</h2>
-            <table id='p_vectors'>
-                <thead>
-                    <th></th>
-                    <th>x</th>
-                    <th>y</th>
-                    <th>z</th>
-                    <th>length</th>
-                </thead>
-                <tbody>
-                <tr>
-                    <th>
-                        1
-                    </th>
-                </tr>
-            <tr>
-                <th>
-                    2
-                </th>
-            </tr>
-        <tr>
-            <th>
-                3
-            </th>
-        </tr></tbody>
-            </table>
-            <canvas id="vector_canvas" width="200" height="200"></canvas>
-            <label for="previous">Previous</label><input type="checkbox" name="previous" value="previous" class='vector_toggle' checked>
-            <label for="current">Current</label><input type="checkbox" name="current" value="current" class='vector_toggle' checked>
-            <label for="orthogonal">Orthogonal</label><input type="checkbox" name="orthogonal" value="orthogonal" class='vector_toggle'>
-        </div>
-        <div id='lyapunov_exponents'>
-            <h2>Lyapunov Exponents</h2>
-            <div id='exponents'>
-                <p>
-                    λ<sub>1</sub>: <span class='exponent'>0</span>
-                </p>
-                <p>
-                    λ<sub>2</sub>: <span class='exponent'>0</span>
-                </p>
-                <p>
-                    λ<sub>3</sub>: <span class='exponent'>0</span>
-                </p>
-                <p>Total: <span id='exponent_sum'></span></p>
+                    Iteration: <span id='iteration'>0</span></p>
+                </div>
             </div>
 
-        </div>
-        <div id="lorenz_vis">
-            <label for="show_vis">Show Visualisation</label><input type="checkbox" name="show_vis" value="show_vis" id='show_vis' checked>
-            <canvas id="lorenz" width="800" height="600"></canvas>
-        </div>
+            <div id='peturbation_vectors'>
+                <h4>Peturbation Vectors</h4>
+                <table id='p_vectors'>
+                    <thead>
+                        <th></th>
+                        <th>x</th>
+                        <th>y</th>
+                        <th>z</th>
+                        <th>||v||</th>
+                    </thead>
+                    <tbody>
+                        <tr><th><em>v<sub>1</sub></em></th></tr>
+                        <tr><th><em>v<sub>2</sub></em></th></tr>
+                        <tr><th><em>v<sub>3</sub></em></th></tr>
+                    </tbody>
+                </table>
+                <div id='vector_vis'>
+
+                    <canvas id="vector_canvas" width="150" height="150"></canvas>
+
+                    <div id='vector_vis_controls'>
+                        <form>
+                            <p>Show:</p>
+                            <input type="checkbox" name="previous" value="previous" class='vector_toggle' checked/><label for='previous'>Previous</label><br>
+                            <input type="checkbox" name="current" value="current" class='vector_toggle' checked><label for="current">Current</label><br>
+                            <input type="checkbox" name="orthogonal" value="orthogonal" class='vector_toggle'><label for="orthogonal">Orthogonal</label><br>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id='lyapunov_exponents'>
+                <h4>Lyapunov Exponents</h4>
+                <div id='exponents'>
+                    <table id="exponent_table">
+                        <tbody>
+                            <tr><th>λ<sub>1</sub></th><td class='exp'>0</td></tr>
+                            <tr><th>λ<sub>2</sub></th><td class='exp'>0</td></tr>
+                            <tr><th>λ<sub>3</sub></th><td class='exp'>0</td></tr>
+                            <tr><th>Total</th><td id='exp_sum'>0</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div id='kaplan_yorke'>
+                <h4>Kaplan Yorke Dimension</h4>
+                <p>D<sub>KY</sub> = <span id='ky_dimension'></span></p>
+            </div>
+            <div id="lorenz_vis">
+                <canvas id="lorenz" width="800" height="600"></canvas>
+            </div>
+    </div>
         <script type='text/javascript' src='/js/vector.js'></script>
         <script type='text/javascript' src='/js/dimension.js'></script>
     </body>
