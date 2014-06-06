@@ -1,10 +1,10 @@
 body {
-    font-family: "Avenir";
+    font-family: "Avenir", "Arial";
 }
 
 h1,h2,h3,h4,h5 {
     font-weight: lighter;
-    font-size: 4.5em;
+    font-size: 2.5em;
 }
 
 h1 {
@@ -47,7 +47,7 @@ div#exponents p {
 
 #lorenz {
     height: 600px;
-    width: 700px;
+    width: 40%;
     position: absolute;
     right: 10px;
     top: 160px;
@@ -63,7 +63,7 @@ div#stats {
 }
 
 #peturbation_vectors {
-   width: 700px;
+   width: 60%;
 }
 
 #kaplan_yorke, #lyapunov_exponents {
